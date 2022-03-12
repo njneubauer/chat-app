@@ -22,29 +22,22 @@ export default class Start extends Component {
       keyboardState: false
     }
 
-    componentDidMount(){
-      Keyboard.addListener('keyboardDidShow', ()=>{
-        this.setState({ keyboardState: true });
-      });
-      Keyboard.addListener('keyboardDidHide', ()=>{
-        this.setState({ keyboardState: false });
-      });
-    }
-
     render(){
         return (
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <View style={styles.container}>
                 <ImageBackground source={backgroundImg} resizeMode="cover" style={styles.backgroundImage}>
-                
-                    <View style={[ this.state.keyboardState ? styles.hide : styles.titleBox ]}>
+
+                    <View style={[ styles.titleBox ]}>
                       <Text style={styles.title}>Welcome to</Text>
                       <Text style={styles.title}>Chitter-Chatter!</Text>
                     </View>
                     <View>{this.state.keyboardState}</View>
+
+                    {/* fix keyboard hiding content issue */}
                     <KeyboardAvoidingView
                     behavior={"position"}
-                    keyboardVerticalOffset={Platform.OS === "ios" ? 40 : -300}
+                    keyboardVerticalOffset={Platform.OS === "ios" ? 55 : -300}
                     style={{ alignItems: "center", justifyContent: "center", height: "auto", width: "100%", padding: 0 }}
                     >
 
