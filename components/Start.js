@@ -10,17 +10,21 @@ import {
     Image,
     KeyboardAvoidingView,
     TouchableWithoutFeedback,
-    Keyboard
+    Keyboard,
+    Platform
 } from 'react-native';
 import backgroundImg from '../assets/Background-Image.png';
 import icon from '../assets/userIcon.png';
 
 export default class Start extends Component {
-    state={
+  constructor(){
+    super();
+    this.state = {
       selectedColor: '#474056',
       name: '',
       keyboardState: false
     }
+  }
 
     render(){
         return (
