@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import { StyleSheet, View, KeyboardAvoidingView, Platform, LogBox } from 'react-native';
 import { GiftedChat } from 'react-native-gifted-chat';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Firebase connection
 import firebase from 'firebase';
@@ -29,6 +28,7 @@ export default class App extends Component {
         }
     }
 
+    // ignore andriod setting timer warning.
     LogBox.ignoreLogs([
       'Setting a timer',
     ]);
@@ -40,6 +40,7 @@ export default class App extends Component {
   }
 
   componentDidMount(){
+    // pass user name to navigation title for chat.js screen
     const { name } = this.props.route.params
     this.props.navigation.setOptions({ title: name });
 
@@ -62,6 +63,7 @@ export default class App extends Component {
         }
       });
 
+      // usubscribe to stop listening to messages (called inside componentWillUnmount)
       this.unsubscribe = this.referenceMessages
         .orderBy("createdAt", "desc")
         .onSnapshot(this.onCollectionUpdate);
@@ -73,6 +75,7 @@ export default class App extends Component {
 
     // go through each document
     querySnapshot.forEach((doc)=>{
+      
       // get the queryDocument's snapshot data
       var data = doc.data(); 
       messages.push({
@@ -90,6 +93,7 @@ export default class App extends Component {
   }
 
   addMessages(){
+    // add message to firebase DB
     const message = this.state.messages[0];
     this.referenceMessages.add({
         _id: message._id,
@@ -101,9 +105,11 @@ export default class App extends Component {
 
 
   onSend(messages = []){
+    // Append messages to message state
     this.setState(previousState =>({
       messages: GiftedChat.append(previousState.messages, messages),
     }), ()=>{
+      // call add message to add message to firebase
       this.addMessages();
     });
   }

@@ -20,7 +20,7 @@ export default class Start extends Component {
   constructor(){
     super();
     this.state = {
-      selectedColor: '#474056',
+      selectedColor: '#474056', 
       name: '',
       keyboardState: false
     }
@@ -31,7 +31,8 @@ export default class Start extends Component {
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <View style={styles.container}>
                 <ImageBackground source={backgroundImg} resizeMode="cover" style={styles.backgroundImage}>
-
+                    
+                    {/* App title */}
                     <View style={[ styles.titleBox ]}>
                       <Text style={styles.title}>Welcome to</Text>
                       <Text style={styles.title}>Chitter-Chatter!</Text>
@@ -45,6 +46,7 @@ export default class Start extends Component {
                     style={{ alignItems: "center", justifyContent: "center", height: "auto", width: "100%", padding: 0 }}
                     >
 
+                    {/* container for content box that holds UI to enter chat room */}
                     <View style={styles.contentBox}>
                       <View style={styles.inputBox}>
                         <Image source={icon} style={styles.userIcon} />
@@ -55,7 +57,8 @@ export default class Start extends Component {
                             onChangeText={(name) => this.setState({name})}
                         />
                       </View>
-
+                      
+                      {/* Color pallette to choose color of chat background */}
                       <Text style={styles.colorText}>Choose Background Color:</Text>
                       <View style={styles.colorPallet}>
                         <TouchableOpacity onPress={() => this.setState({selectedColor: "#090C08"})} style={[ styles.circle1, styles.color1 ]}>
@@ -72,6 +75,7 @@ export default class Start extends Component {
                         </TouchableOpacity>
                       </View>
 
+                      {/* Start chatting button */}
                       <TouchableHighlight 
                         style={styles.button} 
                         onPress={() => this.props.navigation.navigate('Chat', { name: this.state.name, backgroundColor: this.state.selectedColor })}
