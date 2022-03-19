@@ -1,9 +1,11 @@
 import React, { Component } from 'react';
 import { StyleSheet, View, KeyboardAvoidingView, Platform, LogBox } from 'react-native';
-import { GiftedChat } from 'react-native-gifted-chat';
+import { GiftedChat, InputToolbar, Day, SystemMessage } from 'react-native-gifted-chat';
+import NetInfo from '@react-native-community/netinfo';
 
 // Firebase connection
 import firebase from 'firebase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 // chitter-chatter firebaseConfigs
@@ -20,6 +22,7 @@ export default class App extends Component {
     super();
       this.state = {
         messages: [],
+        isOnline: true,
         uid: 0,
         user: {
           _id: "",
@@ -27,15 +30,30 @@ export default class App extends Component {
           avatar: ""
         }
     }
-
     // ignore andriod setting timer warning.
     LogBox.ignoreLogs([
       'Setting a timer',
+      'Warning: Async Storage has been extracted from react-native core'
     ]);
     
     // initializing firebaseDB
     if(!firebase.apps.length){
       firebase.initializeApp(firebaseConfig);
+    }
+
+    // Firebase collection reference
+    this.referenceMessages = firebase.firestore().collection('messages');
+  }
+  
+  async getMessages(){
+    let messages = '';
+    try {
+      messages = await AsyncStorage.getItem('messages') || [];
+      this.setState({
+        messages: JSON.parse(messages)
+      });
+    } catch(error){
+        console.log(error.message);
     }
   }
 
@@ -44,30 +62,44 @@ export default class App extends Component {
     const { name } = this.props.route.params
     this.props.navigation.setOptions({ title: name });
 
-     // Firebase collection reference
-     this.referenceMessages = firebase.firestore().collection('messages');
+    NetInfo.fetch().then(connection=>{
+      if(connection.isConnected) {
+        this.setState({ isOnline: true })
+        
+        // Sign in anonymously if user is not signed in
+        this.authUnsubscribe = firebase.auth().onAuthStateChanged((user)=>{
+          if(!user){
+            firebase.auth().signInAnonymously();
+          }    
+          // update user state with currently active user data
+          this.setState({
+            uid: user.uid,
+            messages: [],
+            user: {
+              _id: user.uid,
+              name: name,
+              avatar: "https://placeimg.com/140/140/any"
+            }
+          });
 
-    // Sign in anonymously if user is not signed in
-    this.authUnsubscribe = firebase.auth().onAuthStateChanged((user)=>{
-      if(!user){
-        firebase.auth().signInAnonymously();
-      }    
-      // update user state with currently active user data
-      this.setState({
-        uid: user.uid,
-        messages: [],
-        user: {
-          _id: user.uid,
-          name: name,
-          avatar: "https://placeimg.com/140/140/any"
-        }
-      });
-
-      // usubscribe to stop listening to messages (called inside componentWillUnmount)
-      this.unsubscribe = this.referenceMessages
-        .orderBy("createdAt", "desc")
-        .onSnapshot(this.onCollectionUpdate);
+          // usubscribe to stop listening to messages (called inside componentWillUnmount)
+          this.unsubscribe = this.referenceMessages
+            .orderBy("createdAt", "desc")
+            .onSnapshot(this.onCollectionUpdate);
+        });
+      }
+      else {
+        this.setState({ isOnline: false })
+        // retrieve messages from AsyncStorage if user is offline
+        this.getMessages();
+      }
     });
+  }
+
+  componentWillUnmount(){
+    // delete messages for development purposes
+    this.unsubscribe();
+    this.authUnsubscribe();
   }
 
   onCollectionUpdate = (querySnapshot) =>{
@@ -76,7 +108,7 @@ export default class App extends Component {
     // go through each document
     querySnapshot.forEach((doc)=>{
       
-      // get the queryDocument's snapshot data
+      // get the query document's snapshot data
       var data = doc.data(); 
       messages.push({
         _id: data._id,
@@ -103,6 +135,14 @@ export default class App extends Component {
     });
   }
 
+  async saveMessages(){
+    // saves messages locally
+    try {
+      await AsyncStorage.setItem('messages', JSON.stringify(this.state.messages));
+    } catch(error){
+        console.log(error.message);
+    }
+  }
 
   onSend(messages = []){
     // Append messages to message state
@@ -111,12 +151,49 @@ export default class App extends Component {
     }), ()=>{
       // call add message to add message to firebase
       this.addMessages();
+      this.saveMessages();
     });
   }
 
-  componentWillUnmount(){
-    this.unsubscribe();
-    this.authUnsubscribe();
+  async deleteMessages(){
+    try {
+      await AsyncStorage.removeItem('messages');
+      this.setState({
+        messages: []
+      })
+    } catch(error){
+      console.log(error.message);
+    }
+  }
+
+  renderInputToolbar(props){
+    if(this.state.isOnline == false){
+    }
+    else {
+      return <InputToolbar {...props} />
+    }
+  }
+
+  renderSystemMessage(props) {
+    return (
+      <SystemMessage
+        {...props}
+        textStyle={{
+          color: this.props.route.params.textColor,
+        }}
+      />
+    );
+  }
+
+  renderDay(props) {
+    return (
+      <Day
+        {...props}
+        textStyle={{
+          color: this.props.route.params.textColor,
+        }}
+      />
+    );
   }
 
   render(){
@@ -125,7 +202,8 @@ export default class App extends Component {
 
     return (
       <View style={[styles.container, { backgroundColor: color }]}>
-        <GiftedChat 
+        <GiftedChat
+          renderInputToolbar={ (props)=> this.renderInputToolbar(props) }
           bottomOffset={Platform.OS === 'ios' ? 35 : null}
           messages={this.state.messages}
           onSend={messages => this.onSend(messages)}
@@ -134,6 +212,8 @@ export default class App extends Component {
             name: this.state.name,
             avatar: this.state.user.avatar
           }}
+          renderDay={(props)=>this.renderDay(props)}
+          renderSystemMessage={this.renderSystemMessage}
         />
         { Platform.OS === 'android' ? <KeyboardAvoidingView behavior="height" /> : null }
       </View>
@@ -144,5 +224,8 @@ export default class App extends Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  color: {
+    color: 'red'
   }
 });

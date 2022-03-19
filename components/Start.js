@@ -21,6 +21,7 @@ export default class Start extends Component {
     super();
     this.state = {
       selectedColor: '#474056', 
+      textColor: '#ffffff',
       name: '',
       keyboardState: false
     }
@@ -61,16 +62,16 @@ export default class Start extends Component {
                       {/* Color pallette to choose color of chat background */}
                       <Text style={styles.colorText}>Choose Background Color:</Text>
                       <View style={styles.colorPallet}>
-                        <TouchableOpacity onPress={() => this.setState({selectedColor: "#090C08"})} style={[ styles.circle1, styles.color1 ]}>
+                        <TouchableOpacity onPress={() => this.setState({selectedColor: "#090C08", textColor: '#ffffff' })} style={[ styles.circle1, styles.color1 ]}>
                           <TouchableOpacity activeOpacity={1} style={[ this.state.selectedColor === "#090C08" ? styles.circle2 : styles.hide ]}></TouchableOpacity>                        
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => this.setState({selectedColor: "#474056"})} style={[ styles.circle1, styles.color2 ]}>
+                        <TouchableOpacity onPress={() => this.setState({selectedColor: "#474056", textColor: '#ffffff'})} style={[ styles.circle1, styles.color2 ]}>
                           <TouchableOpacity activeOpacity={1} style={[ this.state.selectedColor === "#474056" ? styles.circle2 : styles.hide ]}></TouchableOpacity>  
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => this.setState({selectedColor: "#8A95A5"})} style={[ styles.circle1, styles.color3 ]}>
+                        <TouchableOpacity onPress={() => this.setState({selectedColor: "#8A95A5", textColor: '#000000'})} style={[ styles.circle1, styles.color3 ]}>
                           <TouchableOpacity activeOpacity={1} style={[ this.state.selectedColor === "#8A95A5" ? styles.circle2 : styles.hide ]}></TouchableOpacity>  
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => this.setState({selectedColor: "#B9C6AE"})} style={[ styles.circle1, styles.color4 ]}>
+                        <TouchableOpacity onPress={() => this.setState({selectedColor: "#B9C6AE", textColor: '#000000'})} style={[ styles.circle1, styles.color4 ]}>
                           <TouchableOpacity activeOpacity={1} style={[ this.state.selectedColor === "#B9C6AE" ? styles.circle2 : styles.hide ]}></TouchableOpacity>  
                         </TouchableOpacity>
                       </View>
@@ -78,7 +79,7 @@ export default class Start extends Component {
                       {/* Start chatting button */}
                       <TouchableHighlight 
                         style={styles.button} 
-                        onPress={() => this.props.navigation.navigate('Chat', { name: this.state.name, backgroundColor: this.state.selectedColor })}
+                        onPress={() => this.props.navigation.navigate('Chat', { name: this.state.name, backgroundColor: this.state.selectedColor, textColor: this.state.textColor })}
                         >
                         <View>
                           <Text style={styles.textColor}>Start Chatting</Text>
