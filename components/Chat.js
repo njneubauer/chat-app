@@ -2,11 +2,13 @@ import React, { Component } from 'react';
 import { StyleSheet, View, KeyboardAvoidingView, Platform, LogBox } from 'react-native';
 import { GiftedChat, InputToolbar, Day, SystemMessage } from 'react-native-gifted-chat';
 import NetInfo from '@react-native-community/netinfo';
+import CustomActions from './CustomActions';
+import MapView from "react-native-maps";
+
 
 // Firebase connection
 import firebase from 'firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
 
 // chitter-chatter firebaseConfigs
 const firebaseConfig = {
@@ -17,12 +19,14 @@ const firebaseConfig = {
   messagingSenderId: "394581648552",
 };
 
-export default class App extends Component {
+export default class Chat extends Component {
   constructor(){
     super();
       this.state = {
         messages: [],
-        isOnline: true,
+        image: null,
+        isOnline: false,
+        location: null,
         uid: 0,
         user: {
           _id: "",
@@ -30,7 +34,8 @@ export default class App extends Component {
           avatar: ""
         }
     }
-    // ignore andriod setting timer warning.
+
+    // ignore warnings that are related to library maintenance
     LogBox.ignoreLogs([
       'Setting a timer',
       'Warning: Async Storage has been extracted from react-native core'
@@ -59,7 +64,7 @@ export default class App extends Component {
 
   componentDidMount(){
     // pass user name to navigation title for chat.js screen
-    const { name } = this.props.route.params
+    let { name } = this.props.route.params
     this.props.navigation.setOptions({ title: name });
 
     NetInfo.fetch().then(connection=>{
@@ -79,7 +84,8 @@ export default class App extends Component {
               _id: user.uid,
               name: name,
               avatar: "https://placeimg.com/140/140/any"
-            }
+            },
+            isOnline: true
           });
 
           // usubscribe to stop listening to messages (called inside componentWillUnmount)
@@ -89,7 +95,7 @@ export default class App extends Component {
         });
       }
       else {
-        this.setState({ isOnline: false })
+        this.setState({ isOnline: false });
         // retrieve messages from AsyncStorage if user is offline
         this.getMessages();
       }
@@ -100,6 +106,7 @@ export default class App extends Component {
     // delete messages for development purposes
     this.unsubscribe();
     this.authUnsubscribe();
+    this.deleteMessages();
   }
 
   onCollectionUpdate = (querySnapshot) =>{
@@ -109,16 +116,18 @@ export default class App extends Component {
     querySnapshot.forEach((doc)=>{
       
       // get the query document's snapshot data
-      var data = doc.data(); 
+      var data = doc.data();
       messages.push({
         _id: data._id,
         text: data.text,
+        image: data.image || null,
+        location: data.location || null,
         createdAt: data.createdAt.toDate(),
         user: {
           _id: data.user._id,
           name: data.user.name,
           avatar: data.user.avatar
-        }
+        },
       });
     });
     this.setState({ messages });
@@ -127,9 +136,12 @@ export default class App extends Component {
   addMessages(){
     // add message to firebase DB
     const message = this.state.messages[0];
+    console.log(JSON.stringify(this.state.location));
     this.referenceMessages.add({
         _id: message._id,
-        text: message.text,
+        text: message.text || '',
+        image: message.image || null,
+        location: message.location || null,
         createdAt: message.createdAt,
         user: this.state.user
     });
@@ -196,6 +208,26 @@ export default class App extends Component {
     );
   }
 
+  renderCustomActions = (props) => <CustomActions {...props} />;
+
+  renderCustomView(props){
+    const { currentMessage } = props;
+    if (currentMessage.location) {
+      return(
+        <MapView
+          style={{ width: 150, height: 100, borderRadius: 13, margin: 3 }}
+          region={{
+            latitude: currentMessage.location.latitude,
+            longitude: currentMessage.location.longitude,
+            latitudeDelta: 0.0922,
+            longitudeDelta: 0.0421,
+          }}
+        />
+      );
+    }
+    return null;
+  }
+
   render(){
     // assign color passed from start.js to color variable used to change chat background
     const color  = this.props.route.params.backgroundColor;
@@ -207,14 +239,16 @@ export default class App extends Component {
           bottomOffset={Platform.OS === 'ios' ? 35 : null}
           messages={this.state.messages}
           onSend={messages => this.onSend(messages)}
+          renderDay={(props)=>this.renderDay(props)}
+          renderSystemMessage={this.renderSystemMessage}
+          renderCustomView={this.renderCustomView}
+          renderActions={this.renderCustomActions}
           user={{
             _id: this.state.user._id,
             name: this.state.name,
             avatar: this.state.user.avatar
           }}
-          renderDay={(props)=>this.renderDay(props)}
-          renderSystemMessage={this.renderSystemMessage}
-        />
+          />
         { Platform.OS === 'android' ? <KeyboardAvoidingView behavior="height" /> : null }
       </View>
     );
@@ -225,7 +259,4 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  color: {
-    color: 'red'
-  }
 });
